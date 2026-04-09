@@ -26,6 +26,10 @@ def get_driver(protocol: str):
         from drivers import http
         _drivers[protocol] = http
         return http
+    elif protocol in ("ssap",):
+        from drivers import ssap
+        _drivers["ssap"] = ssap
+        return ssap
     else:
         return None
 
@@ -39,7 +43,7 @@ def execute(device_config: dict, command_name: str, params: list) -> dict:
     driver = get_driver(protocol)
 
     if driver is None:
-        return {"ok": False, "error": f"Protocol '{protocol}' not yet supported. Supported: ssh, adb, http"}
+        return {"ok": False, "error": f"Protocol '{protocol}' not yet supported. Supported: ssh, adb, http, ssap"}
 
     commands = device_config.get("commands", {})
     cmd_spec = commands.get(command_name)

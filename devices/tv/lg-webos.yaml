@@ -7,8 +7,8 @@ discovery:
   mac_prefixes: ["4c:ba:d7", "a8:23:fe", "c8:08:e9", "64:95:6c", "38:8c:50"]
   hostname_patterns: ["(?i)lg.*tv", "(?i)webos", "(?i)LGwebOSTV"]
 connection:
-  method: websocket
-  port: 3000
+  method: websocket_tls
+  port: 3001
   auth: { type: pairing }
 commands:
   power_off: { description: "Power off", action: "ssap://system/turnOff" }
@@ -25,4 +25,4 @@ commands:
   screenshot: { description: "Screenshot", action: "custom://screenshot" }
 notes: |
   Client key saved after first pairing. WOL needs "Quick Start+" enabled.
-  SSAP WebSocket: port 3000 (ws) or 3001 (wss).
+  SSAP WebSocket: port 3001 (wss/tls). Port 3000 (ws) may be unavailable on newer TVs.
