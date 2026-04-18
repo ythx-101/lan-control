@@ -26,6 +26,14 @@ def get_driver(protocol: str):
         from drivers import http
         _drivers[protocol] = http
         return http
+    elif protocol in ("ssap", "websocket"):
+        from drivers import ssap
+        _drivers[protocol] = ssap
+        return ssap
+    elif protocol in ("broadlink", "udp"):
+        from drivers import broadlink
+        _drivers[protocol] = broadlink
+        return broadlink
     else:
         return None
 
@@ -39,7 +47,7 @@ def execute(device_config: dict, command_name: str, params: list) -> dict:
     driver = get_driver(protocol)
 
     if driver is None:
-        return {"ok": False, "error": f"Protocol '{protocol}' not yet supported. Supported: ssh, adb, http"}
+        return {"ok": False, "error": f"Protocol '{protocol}' not yet supported. Supported: ssh, adb, http, ssap, broadlink"}
 
     commands = device_config.get("commands", {})
     cmd_spec = commands.get(command_name)

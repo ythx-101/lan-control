@@ -94,6 +94,9 @@ def cmd_control(args):
         print("Use: cli.py supported  to see available devices", file=sys.stderr)
         sys.exit(1)
 
+    # Driver-private: stable key used to scope secrets and per-device state
+    device["_key"] = args.device
+
     # Try to find device IP from state
     if "ip" not in device and STATE_FILE.exists():
         with open(STATE_FILE) as f:
