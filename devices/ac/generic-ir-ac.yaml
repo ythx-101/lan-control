@@ -1,0 +1,63 @@
+device:
+  name: "Generic IR Air Conditioner"
+  type: ac
+  vendor: Generic
+  protocol: broadlink                # ACs have no LAN themselves; bridged via a BroadLink IR blaster
+
+discovery:
+  # An IR-only AC is invisible on the network. Point this profile at a
+  # BroadLink RM4 (see devices/ir-remote/broadlink-rm4.yaml) — that's the
+  # device `control` actually talks to.
+  mac_prefixes: []
+  hostname_patterns: []
+
+connection:
+  method: udp
+  port: 80
+
+commands:
+  power_on:
+    description: "Turn AC on"
+    action: "send_code:power_on"
+  power_off:
+    description: "Turn AC off"
+    action: "send_code:power_off"
+  temp_cool_24:
+    description: "Cool mode, 24°C"
+    action: "send_code:temp_cool_24"
+  temp_cool_26:
+    description: "Cool mode, 26°C"
+    action: "send_code:temp_cool_26"
+  temp_heat_20:
+    description: "Heat mode, 20°C"
+    action: "send_code:temp_heat_20"
+  fan_low:
+    description: "Fan speed low"
+    action: "send_code:fan_low"
+  fan_high:
+    description: "Fan speed high"
+    action: "send_code:fan_high"
+  swing_on:
+    description: "Swing on"
+    action: "send_code:swing_on"
+  swing_off:
+    description: "Swing off"
+    action: "send_code:swing_off"
+
+  # Meta
+  learn:
+    description: "Capture a new IR code (press AC remote within 15s)"
+    action: "learn"
+    params: ["name"]
+  list_codes:
+    description: "List learned code names"
+    action: "list_codes"
+
+notes: |
+  IR ACs do not sit on the network — this profile is a convenience shim over
+  the BroadLink driver. Run `cli.py control generic-ir-ac learn temp_cool_26`
+  while holding the AC remote to populate the code table.
+
+  Code names above are a convention, not a contract. Use whatever scheme your
+  remote supports (e.g. `temp_auto_22`, `mode_dry`). List them with
+  `cli.py control generic-ir-ac list_codes`.
