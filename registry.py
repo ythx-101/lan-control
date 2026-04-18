@@ -58,6 +58,9 @@ def load_device_configs() -> Dict[str, Any]:
                 'discovery': data.get('discovery', {}),
                 'connection': data.get('connection', {}),
                 'commands': data.get('commands', {}),
+                # Bridge: for devices that don't sit on the network themselves
+                # (e.g. an IR-only AC bridged through a BroadLink RM4).
+                'bridge': data.get('bridge'),
             }
         except Exception as e:
             print(f"Warning: Failed to load {yaml_file}: {e}", file=__import__('sys').stderr)

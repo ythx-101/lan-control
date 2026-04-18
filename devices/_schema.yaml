@@ -5,7 +5,13 @@ device:
   name: "Device Name"           # Human-readable name
   type: tv                      # router | tv | ir-remote | speaker | camera | ac | iot
   vendor: "Brand"               # Manufacturer
-  protocol: http                # ssap | http | udp | adb | ssh | mqtt | cast
+  protocol: http                # ssap | http | https | udp | broadlink | adb | ssh | mqtt | cast
+
+# Optional: for devices that don't sit on the network themselves
+# (e.g. an IR AC bridged through a BroadLink blaster). The key names
+# another profile in devices/ whose IP this profile should use.
+#
+# bridge: broadlink-rm4
 
 discovery:
   mac_prefixes:                 # First 3 bytes of MAC address (find at macaddress.io)

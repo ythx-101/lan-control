@@ -62,17 +62,19 @@ $ python3 cli.py discover
 $ python3 cli.py devices
 📱 4 devices found:
   📺 192.168.1.100  LG webOS TV          ssap
-  🎛️ 192.168.1.101  BroadLink RM4        http
+  🎛️ 192.168.1.101  BroadLink RM4        broadlink
   📷 192.168.1.102  Reolink Camera       http
   📦 192.168.1.103  Android TV Box       adb
 
 $ python3 cli.py commands lg-webos
-  power_off     关机
-  volume_up     音量+
-  launch_app    启动应用 [youtube, netflix, ...]
-  set_volume    设置音量 (0-100)
-  screenshot    截屏
-  ...18 commands total
+  power_off     Power off
+  volume_up     Volume +
+  launch_app    Launch app by id  [youtube, netflix, ...]
+  set_volume    Set volume (0-100)
+  screenshot    Capture screen to local file
+  yt_play       Play YouTube video by id
+  button        Send a single remote button (UP/DOWN/ENTER/...)
+  ...39 commands total
 ```
 
 ## Supported Devices
@@ -80,14 +82,14 @@ $ python3 cli.py commands lg-webos
 | Type | Devices | Protocol | Control | Status |
 |------|---------|----------|---------|--------|
 | **Router** | OpenWrt, GL.iNet, ASUS Merlin, TP-Link, Xiaomi, Ubiquiti | SSH/HTTP API | `ssh` driver | ✅ Verified |
-| **TV** | LG webOS | WebSocket (SSAP) | planned | ✅ Profile |
+| **TV** | LG webOS | WebSocket (SSAP) | `ssap` driver | ✅ Verified |
 | **TV** | Samsung Tizen, Roku | HTTP | planned | 📝 Planned |
-| **IR Remote** | BroadLink RM4 | UDP/HTTP | planned | ✅ Profile |
+| **IR Remote** | BroadLink RM4 / RM Mini | UDP (AES-128) | `broadlink` driver | ✅ Verified |
 | **Android Box** | H616/H618/S905/RK3566 | ADB/SSH | `adb` driver | ✅ Verified |
 | **E-ink** | ESP32 displays (Waveshare, LilyGo, TRMNL) | HTTP | `http` driver | ✅ Profile |
 | **Speaker** | Google Nest, Amazon Echo | Cast/HTTP | planned | 📝 Planned |
 | **Camera** | Reolink, Hikvision | HTTP | `http` driver | 📝 Planned |
-| **AC** | Generic IR (via BroadLink) | IR Bridge | planned | 📝 Planned |
+| **AC** | Generic IR (bridged via BroadLink) | IR Bridge | `broadlink` driver | ✅ Profile |
 | **IoT** | ESP/Tuya, Tasmota | HTTP/MQTT | `http` driver | 📝 Planned |
 
 > **✅ Verified** = tested on real hardware with working driver. **✅ Profile** = YAML profile exists, driver in progress. **📝 Planned** = PRs welcome.
@@ -180,7 +182,8 @@ MAC prefix + hostname → match devices/*.yaml
    ▼
 Identified devices → native protocol commands
    📺 LG TV      → WebSocket (SSAP)
-   🎛️ BroadLink  → UDP/HTTP
+   🎛️ BroadLink  → UDP (AES-128-CBC)
+   ❄️ IR AC      → bridged through BroadLink
    📷 Camera     → HTTP API
    📦 Android    → ADB
 ```
@@ -190,13 +193,25 @@ devices/             ← Community contributes HERE
   router/            OpenWrt, GL.iNet, ASUS, TP-Link
   tv/                LG webOS, Samsung Tizen, Roku
   ir-remote/         BroadLink, Tuya IR
+  ac/                IR air conditioners (bridged through BroadLink)
   speaker/           Google Nest, Amazon Echo
   camera/            Reolink, Hikvision
   iot/               Android Box, ESP/Tuya, Tasmota
   _schema.yaml       Template for new devices
+drivers/             ← Protocol implementations
+  ssh.py             OpenWrt / Linux shells
+  adb.py             Android TV boxes
+  http.py            REST / webhook devices
+  ssap.py            LG webOS over WebSocket (pair → store key)
+  broadlink.py       BroadLink RM4 UDP (AES-128-CBC)
 registry.py          ← Auto-scans devices/
 cli.py               ← CLI entry point
 scripts/             ← Shell scripts (discover, connect, health)
+
+~/.lan-control/      ← User-local state (never committed)
+  state.json         Discovered devices from last `devices` run
+  secrets.yaml       LG webOS client-keys, chmod 0600
+  ir_codes/          Learned IR codes, one JSON per device
 ```
 
 ## Anti-patterns We Handle

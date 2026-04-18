@@ -4,10 +4,12 @@ device:
   vendor: Generic
   protocol: broadlink                # ACs have no LAN themselves; bridged via a BroadLink IR blaster
 
+# An IR-only AC is invisible on the network. lan-control routes every
+# command through this bridge device — cli.py will look up broadlink-rm4's
+# IP from state.json / discovery and use that as the actual target.
+bridge: broadlink-rm4
+
 discovery:
-  # An IR-only AC is invisible on the network. Point this profile at a
-  # BroadLink RM4 (see devices/ir-remote/broadlink-rm4.yaml) — that's the
-  # device `control` actually talks to.
   mac_prefixes: []
   hostname_patterns: []
 

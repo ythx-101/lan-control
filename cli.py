@@ -84,6 +84,24 @@ def cmd_commands(args):
             print(f"    Params: {params}")
 
 
+def _resolve_ip_from_state(device_key, device_type):
+    """Look up a device's IP in ~/.lan-control/state.json (written by `devices`)."""
+    if not STATE_FILE.exists():
+        return None
+    try:
+        with open(STATE_FILE) as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        return None
+    needle = device_key.replace("-", "")
+    for d in state.get("devices", []):
+        if d.get("type") == device_type:
+            return d.get("ip")
+        if d.get("hostname", "").lower().find(needle) >= 0:
+            return d.get("ip")
+    return None
+
+
 def cmd_control(args):
     """Control a device."""
     import drivers
@@ -97,14 +115,22 @@ def cmd_control(args):
     # Driver-private: stable key used to scope secrets and per-device state
     device["_key"] = args.device
 
-    # Try to find device IP from state
-    if "ip" not in device and STATE_FILE.exists():
-        with open(STATE_FILE) as f:
-            state = json.load(f)
-        for d in state.get("devices", []):
-            if d.get("type") == device.get("type") or d.get("hostname", "").lower().find(args.device.replace("-", "")) >= 0:
-                device["ip"] = d["ip"]
-                break
+    # Find the IP we should talk to.
+    # 1) device's own state/discovery entry
+    # 2) if the profile declares `bridge: <key>`, fall back to the bridge's IP
+    #    (e.g. an IR-only AC routed through a BroadLink RM4)
+    if "ip" not in device:
+        ip = _resolve_ip_from_state(args.device, device.get("type"))
+        if not ip and device.get("bridge"):
+            bridge_key = device["bridge"]
+            bridge = registry.get_device(bridge_key)
+            if bridge:
+                ip = bridge.get("ip") or _resolve_ip_from_state(bridge_key, bridge.get("type"))
+                if ip:
+                    print(f"ℹ️  routing {args.device} via bridge {bridge_key} @ {ip}",
+                          file=sys.stderr)
+        if ip:
+            device["ip"] = ip
 
     result = drivers.execute(device, args.cmd_name, args.params if hasattr(args, 'params') else [])
 
