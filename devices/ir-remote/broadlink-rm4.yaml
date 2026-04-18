@@ -2,17 +2,51 @@ device:
   name: "BroadLink RM4"
   type: ir-remote
   vendor: BroadLink
-  protocol: udp
+  protocol: broadlink
+
 discovery:
   mac_prefixes: ["e8:70:72", "24:df:a7", "34:ea:34"]
-  hostname_patterns: ["(?i)broadlink", "(?i)rm4"]
+  hostname_patterns: ["(?i)broadlink", "(?i)rm4", "(?i)rmmini"]
+
 connection:
   method: udp
   port: 80
-  auth: { type: token }
+  auth:
+    type: token                # auto-acquired, refreshed on every session
+
 commands:
-  learn_ir: { description: "Learn IR signal", action: "learn" }
-  send_ir: { description: "Send IR signal", action: "send", params: ["code"] }
-  temperature: { description: "Read temperature sensor", action: "check_sensors" }
+  # --- Send user-learned codes ---
+  send:
+    description: "Send a previously-learned IR code by name"
+    action: "send_code"
+    params: ["name"]
+  send_raw:
+    description: "Send a raw IR blob (hex or base64)"
+    action: "send_raw"
+    params: ["code"]
+
+  # --- Learn new codes (press remote button within 15s) ---
+  learn:
+    description: "Learn an IR code and save it under ~/.lan-control/ir_codes/<device>.json"
+    action: "learn"
+    params: ["name"]
+
+  # --- Inspect ---
+  list_codes:
+    description: "List learned code names for this device"
+    action: "list_codes"
+
+  # --- RM4 Pro only ---
+  check_sensors:
+    description: "Read temperature + humidity (RM4 Pro)"
+    action: "check_sensors"
+
 notes: |
-  Requires python-broadlink library. IR codes are device-specific.
+  No Python crypto dependency required — the driver uses the `cryptography`
+  package if available, otherwise falls back to the `openssl` CLI. Either
+  works; on small OpenWrt boxes the CLI fallback is what actually makes this
+  viable.
+
+  Learned codes are stored per-device under ~/.lan-control/ir_codes/ so each
+  user keeps their own remote table. Nothing device-specific is committed
+  here — only the protocol binding.

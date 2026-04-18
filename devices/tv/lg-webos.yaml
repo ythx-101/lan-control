@@ -3,26 +3,201 @@ device:
   type: tv
   vendor: LG
   protocol: ssap
+
 discovery:
   mac_prefixes: ["4c:ba:d7", "a8:23:fe", "c8:08:e9", "64:95:6c", "38:8c:50"]
   hostname_patterns: ["(?i)lg.*tv", "(?i)webos", "(?i)LGwebOSTV"]
+  mdns_services:
+    - "_lg-smart-tv._tcp"
+
 connection:
   method: websocket
-  port: 3000
-  auth: { type: pairing }
+  port: 3001                   # wss (use 3000 for ws)
+  auth:
+    type: pairing              # client-key stored in ~/.lan-control/secrets.yaml
+  app_name: lan-control        # shown on TV during pairing
+
 commands:
-  power_off: { description: "Power off", action: "ssap://system/turnOff" }
-  power_on: { description: "Power on (WOL)", action: "WOL" }
-  volume_up: { description: "Volume +", action: "ssap://audio/volumeUp" }
-  volume_down: { description: "Volume -", action: "ssap://audio/volumeDown" }
-  set_volume: { description: "Set volume (0-100)", action: "ssap://audio/setVolume", params: ["volume"] }
-  mute: { description: "Toggle mute", action: "ssap://audio/setMute" }
-  launch_app: { description: "Launch app", action: "ssap://system.launcher/launch", params: ["id"] }
-  get_apps: { description: "List installed apps", action: "ssap://com.webos.applicationManager/listApps" }
-  set_input: { description: "Switch input", action: "ssap://tv/switchInput", params: ["inputId"] }
-  play: { description: "Play", action: "ssap://media.controls/play" }
-  pause: { description: "Pause", action: "ssap://media.controls/pause" }
-  screenshot: { description: "Screenshot", action: "custom://screenshot" }
+  # ---- Power ----
+  power_off:
+    description: "Power off"
+    action: "ssap://system/turnOff"
+  power_state:
+    description: "Get power state"
+    action: "ssap://com.webos.service.tvpower/power/getPowerState"
+  screen_off:
+    description: "Turn screen off (audio continues)"
+    action: "ssap://com.webos.service.tvpower/power/turnOffScreen"
+  screen_on:
+    description: "Turn screen back on"
+    action: "ssap://com.webos.service.tvpower/power/turnOnScreen"
+
+  # ---- Audio ----
+  volume_up:
+    description: "Volume +"
+    action: "ssap://audio/volumeUp"
+  volume_down:
+    description: "Volume -"
+    action: "ssap://audio/volumeDown"
+  set_volume:
+    description: "Set volume (0-100)"
+    action: "ssap://audio/setVolume"
+    params: ["volume"]
+    payload:
+      volume: "{volume}"
+  get_volume:
+    description: "Get current volume"
+    action: "ssap://audio/getVolume"
+  mute:
+    description: "Mute"
+    action: "ssap://audio/setMute"
+    payload:
+      mute: true
+  unmute:
+    description: "Unmute"
+    action: "ssap://audio/setMute"
+    payload:
+      mute: false
+
+  # ---- Apps ----
+  get_apps:
+    description: "List installed apps"
+    action: "ssap://com.webos.applicationManager/listApps"
+  foreground_app:
+    description: "Get foreground app info"
+    action: "ssap://com.webos.applicationManager/getForegroundAppInfo"
+  launch_app:
+    description: "Launch app by id"
+    action: "ssap://com.webos.applicationManager/launch"
+    params: ["id"]
+    payload:
+      id: "{id}"
+  close_app:
+    description: "Close app by id"
+    action: "ssap://system.launcher/close"
+    params: ["id"]
+    payload:
+      id: "{id}"
+  youtube:
+    description: "Launch YouTube"
+    action: "ssap://com.webos.applicationManager/launch"
+    payload:
+      id: "youtube.leanback.v4"
+  netflix:
+    description: "Launch Netflix"
+    action: "ssap://com.webos.applicationManager/launch"
+    payload:
+      id: "netflix"
+  home:
+    description: "Go to Home"
+    action: "ssap://com.webos.applicationManager/launch"
+    payload:
+      id: "com.webos.app.home"
+
+  # ---- TV ----
+  get_inputs:
+    description: "List external inputs (HDMI/AV/etc)"
+    action: "ssap://tv/getExternalInputList"
+  switch_input:
+    description: "Switch to input id"
+    action: "ssap://tv/switchInput"
+    params: ["inputId"]
+    payload:
+      inputId: "{inputId}"
+  channel:
+    description: "Get current channel"
+    action: "ssap://tv/getCurrentChannel"
+  ch_up:
+    description: "Channel up"
+    action: "ssap://tv/channelUp"
+  ch_down:
+    description: "Channel down"
+    action: "ssap://tv/channelDown"
+
+  # ---- Media transport ----
+  play:
+    description: "Play"
+    action: "ssap://media.controls/play"
+  pause:
+    description: "Pause"
+    action: "ssap://media.controls/pause"
+  stop:
+    description: "Stop"
+    action: "ssap://media.controls/stop"
+  rewind:
+    description: "Rewind"
+    action: "ssap://media.controls/rewind"
+  forward:
+    description: "Fast-forward"
+    action: "ssap://media.controls/fastForward"
+
+  # ---- Remote buttons (pointer socket) ----
+  button:
+    description: "Send a single remote button"
+    action: "button:{0}"
+    params: ["name"]
+  buttons:
+    description: "Send multiple buttons (comma list, last item can be delay in seconds)"
+    action: "buttons:{0}"
+    params: ["sequence"]
+
+  # ---- UI affordances ----
+  input_picker:
+    description: "Show input picker overlay"
+    action: "ssap://com.webos.surfacemanager/showInputPicker"
+  alert:
+    description: "Show an alert dialog on TV"
+    action: "custom://alert"
+    params: ["message"]
+  close_alert:
+    description: "Close alert by id"
+    action: "custom://close_alert"
+    params: ["alertId"]
+
+  # ---- Screenshot ----
+  screenshot:
+    description: "Capture screen to local file (default /tmp/lan-control-screenshot.jpg)"
+    action: "custom://screenshot"
+    params: ["save_path"]
+
+  # ---- YouTube helpers ----
+  yt_play:
+    description: "Play YouTube video by id"
+    action: "custom://yt_play"
+    params: ["video_id"]
+  yt_search:
+    description: "Search YouTube for query (drives the IME)"
+    action: "custom://yt_search"
+    params: ["query"]
+
+  # ---- Text input (webOS 22+ often blocks with 401) ----
+  type_text:
+    description: "Type text via IME (may require app focus)"
+    action: "ssap://com.webos.service.ime/insertText"
+    params: ["text"]
+    payload:
+      text: "{text}"
+      replace: 0
+  send_enter:
+    description: "Send Enter key via IME"
+    action: "ssap://com.webos.service.ime/sendEnterKey"
+
+  # ---- Diagnostics ----
+  configs:
+    description: "Get configs (optional glob, default tv.model.*)"
+    action: "ssap://config/getConfigs"
+    params: ["pattern"]
+    payload:
+      configNames: ["{pattern}"]
+  storage:
+    description: "List attached storage devices"
+    action: "ssap://com.webos.service.attachedstoragemanager/listDevices"
+
 notes: |
-  Client key saved after first pairing. WOL needs "Quick Start+" enabled.
-  SSAP WebSocket: port 3000 (ws) or 3001 (wss).
+  First run will prompt for pairing on the TV screen. Accept it — the returned
+  client-key is stored in ~/.lan-control/secrets.yaml (chmod 0600). Keep that
+  file private: with the key anyone on your LAN can drive the TV.
+
+  Remote buttons are sent through a separate pointer WebSocket that the TV
+  hands out per session — so `button` / `buttons` work even when the app
+  manager does not expose a given input.
